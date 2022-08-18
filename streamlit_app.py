@@ -6,7 +6,7 @@ import datetime
 
 #import pandas_datareader as data
 #import flask as fsk
-import yfinance as yf
+#import yfinance as yf
 
 from datetime import date
 from keras.layers import Dense, Dropout, LSTM
