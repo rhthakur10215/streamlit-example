@@ -5,7 +5,7 @@ import numpy as np
 import datetime
 
 #import pandas_datareader as data
-import flask as fsk
+#import flask as fsk
 import yfinance as yf
 
 from datetime import date
