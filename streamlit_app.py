@@ -1,88 +1,206 @@
-
-    #Importing Libraries
 import pandas as pd
 import numpy as np
-import streamlit as st
-import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
+import datetime
+
 import pandas_datareader as data
 import flask as fsk
-from datetime import date
 import yfinance as yf
-from chart_studio.plotly import plot, iplot, plotly
-#import plotly.plotly as py
 
-        # from fbprophet import Prophet
-from neuralprophet import NeuralProphet
-from neuralprophet import set_random_seed 
-set_random_seed(0)
-#from neuralprophet.plot import plot_plotly
-#from plotly import graph_objs as go
-import plotly.express as px
-   #import plotly.graph_objects as go 
-#import plotly.plotly as py
-startdate = '2010-01-01'
-enddate = date.today().strftime("%Y-%m-%d")
-#enddate = datetime.date.today()
-st.title("Stock Prediction app for long duration")
-   
-stocks = ("AAPL", "GOOG", "HDFCBANK.NS", "^NSEI","^NSEBANK")
-selected_stock = st.selectbox("Select Dataset for prediction", stocks)
-## n_years = st.slider("prediction Months:", 1, 3)
-n_weeks = st.slider("prediction Days:", 1, 7)
-period = n_weeks * 24
+from datetime import date
+from keras.layers import Dense, Dropout, LSTM
+from keras.models import Sequential
+from keras.models import load_model
 
-@st.cache
-def load_data(ticker):
-    data = yf.download(tickers='HDFCBANK.NS', period='1d', interval='5m')
-#    data = yf.download(ticker,startdate, enddate)
- #   data.date = data.date.strftime("%Y-%m-%d")
- #   data[Datetime]= data.Datetime.strftime("%Y-%m-%d")
-    data.reset_index(inplace = True)
-    return data
+import streamlit as st
+# To remove the scientific notation from numpy arrays
+np.set_printoptions(suppress=True)
 
-#data_load_state = st.text("load data")
-data = load_data(selected_stock)
-#data_load_state.text("data loading....done!")
+from nsepy import get_history
+from datetime import datetime
+# install the nsepy library to get stock prices
+#!pip install nsepy
+#######################################
+start = '2018-01-01'
+end = '2022-05-22'
+############################################
+# Getting Stock data using nsepy library
 
-st.subheader('Raw data')
-st.write(data.tail())
 
-#st.write(data.Date)
+#########################################
+#endDate=date.today().strftime("%Y-%m-%d")
+# Fetching the data
+#StockData=get_history(symbol='INFY', start=startDate, end=endDate)
+#StockData = get_history(symbol="NIFTY", start=startDate, end=endDate, index=True)  
+#StockData = get_history(symbol="BANKNIFTY", start=startDate, end=endDate, index=True)                   
+                      
+#end = date.today()
+#df = data.DataReader('HDFCBANK.NS','yahoo', start, end)
 
-#fig = go.scatter(x=[0, 1, 2, 3, 4], y=[0, 1, 4, 9, 16])
-#fig.show()
+#df = data.DataReader('HDFCBANK.NS','yahoo', start, end)
+user_input = ['HDFCBANK.NS']
+#def UpdateCSV(stock = 'HDFCBANK.NS', update = True ):
+#df= yf.download(user_input,'2016-01-01','2022-05-22')
+df = yf.download(tickers='^NSEBANK', period='365d', interval='1d')
+#df = get_history(symbol="BANKNIFTY", start=start, end=end, index=True) 
+#assert None == df.to_csv("DATA22.csv")
+#if 0:
+#    UpdateCSV()
 
-#def plot_raw_data():
-#import plotly.graph_objects as go
-#fig = go.Figure()
-#fig = go.scatter(x = data['Close'], y = data['Open'], name ='Open price')
-#fig = go.scatter(x = data['Close'], y = data['Open'], name ='Open price')
-    #fig.add_trace(go.Scatter(x=data['Date'], y= data['Open'], name ='Open price')
-   # fig.add_trace(go.Scatter(x=data['Date'], y= data['Close'], name ='Close price')
-#fig.layout.update(title_text("time Series Data", xaxis_rangeslider_visible =True)
-   # st.plotly_chart(fig)
-   # plot_raw_data()
-                  
-#fig.show()
+##########################
+st.title('Stock Trend Prediction')
+#df = data.DataReader('HDFCBANK.NS','yahoo', start, end)
+#df = data.get_data_yahoo('HDFCBANK.NS',start='2010-01-01', end='2022-01-01')
+user_input = st.text_input('Enter ticker name','NSEBANK')
+#df = data.DataReader('user_input','yahoo', start, end)
+#df= yf.download('user_input','2016-01-01','2022-01-23')
+#df= yf.download(user_input,'2016-01-01','2022-05-22')
+df = yf.download(tickers='^NSEBANK', period='365d', interval='1d')
+#df = get_history(symbol="BANKNIFTY", start=start, end=end, index=True) 
 
-# Prediction .. ... 
-df_train = data[['Datetime', 'Close']]
-df_train = df_train.rename(columns= {"Datetime": "ds", "Close": "y"})
+st.subheader('Closing Price Vs Time Chart')
+fig = plt.figure(figsize=(16,6))
+plt.plot(df.Close)
+st.pyplot(fig)
 
-m = NeuralProphet()
-m.fit(df_train, freq = "H")
-future = m.make_future_dataframe(df_train, periods = period)
-forecast = m.predict(future)
-st.subheader('Forecast Data')
-st.write(forecast.tail())
+#################################################################################################
+###############Test Code ################
+#Data viz
+import plotly.graph_objs as go
 
-st.write('forecast data')
-fig1 = plotly(m, forecast)
-st.plotly_chart(fig1)
+#declare figure
+fig = go.Figure()
 
-st.write('forecast components')
-fig2 = m.plot_components(forecast)
-st.write(fig2)
+#Candlestick
+fig.add_trace(go.Candlestick(x=df.index,
+                open=df['Open'],
+                high=df['High'],
+                low=df['Low'],
+                close=df['Close'], name = 'market data'))
 
+# Add titles
+fig.update_layout(
+    title='NIFTY live share price evolution',
+    yaxis_title='Stock Price (INR per Shares)')
+
+# X-Axes
+fig.update_xaxes(
+    rangeslider_visible=True,
+    rangeselector=dict(
+        buttons=list([
+            dict(count=5, label="5m", step="minute", stepmode="backward"),
+            dict(count=15, label="15m", step="minute", stepmode="backward"),
+            dict(count=45, label="45m", step="minute", stepmode="backward"),
+            dict(count=1, label="HTD", step="hour", stepmode="todate"),
+            dict(count=3, label="W", step="day", stepmode="backward"),
+            dict(step="all")
+        ])
+    )
+)
+
+#Show
+fig.show()
+
+#####################################################################################################
+
+st.subheader('Data from live market')
+st.write(df.describe())
+
+st.subheader('Closing Price Vs Time Chart')
+fig = plt.figure(figsize=(16,6))
+plt.plot(df.Close)
+st.pyplot(fig)
+
+st.subheader('Closing Price Vs Time Chart of 100MA')
+ma100 = df.Close.rolling(100).mean()
+ma200 = df.Close.rolling(200).mean()
+
+fig = plt.figure(figsize=(16,6))
+plt.plot(ma100)
+plt.plot(df.Close)
+plt.legend()
+st.pyplot(fig)
+
+st.subheader('Closing Price Vs Time Chart of 100MA & 200Ma')
+ma100 = df.Close.rolling(100).mean()
+ma200 = df.Close.rolling(200).mean()
+
+fig = plt.figure(figsize=(16,6))
+plt.plot(ma100, 'r', label = '100 Moving avg')
+plt.plot(ma200, 'g', label = '200 Moving avg')
+plt.plot(df.Close, 'b', label = 'Actual Price')
+plt.legend()
+st.pyplot(fig)
+                 
+#Data training and testing    
+data_training = pd.DataFrame(df['Close'][0:int(len(df)*0.70)])
+data_testing = pd.DataFrame(df['Close'][int(len(df)*0.70):int(len(df))])    
+
+#Importing MinMax Scaler :
+from sklearn.preprocessing import MinMaxScaler
+scaler=MinMaxScaler(feature_range=(0,1))
+data_training_array=scaler.fit_transform(data_training) #data_training
+
+x_train = []
+y_train = []
+for i in range(100, data_training_array.shape[0]):
+    x_train.append(data_training_array[i-100: i])
+    y_train.append(data_training_array[i, 0])
+
+x_train, y_train = np.array(x_train), np.array(y_train)
+
+from keras.layers import Dense, Dropout, LSTM
+from keras.models import Sequential
+
+model = Sequential()
+model.add(LSTM(units=50, activation = 'relu', return_sequences = True, 
+               input_shape =(x_train.shape[1],1)))
+model.add(Dropout(0.2))
+
+model.add(LSTM(units=60, activation = 'relu', return_sequences = True))
+model.add(Dropout(0.3))
+
+model.add(LSTM(units=80, activation = 'relu', return_sequences = True))
+model.add(Dropout(0.4))
+
+model.add(LSTM(units=120, activation = 'relu'))
+model.add(Dropout(0.5))
+
+model.add(Dense(units=1))
+
+# Load my ready model
+model = load_model('keras_model.h5')
+
+#testing Part
+
+past_100_days = data_training.tail(100)
+final_df = past_100_days.append(data_testing, ignore_index = True)
+
+input_data = scaler.fit_transform(final_df)
+
+x_test = []
+y_test = []
+for i in range(100, input_data.shape[0]):
+    x_test.append(input_data[i-100: i])
+    y_test.append(input_data[i, 0])
+x_test, y_test = np.array(x_test), np.array(y_test)
+
+#Prediction Section
+y_predicted = model.predict(x_test)
+div = scaler.scale_
+scale_factor = 1/div[0]
+#scale_factor = 1/0.00108578
+
+y_predicted = y_predicted * scale_factor
+y_test = y_test * scale_factor
+
+st.subheader(' Final grapg of prected values Vs actual price')
+fig2 = plt.figure(figsize = (16,6))
+plt.plot(y_test, 'b', label = 'Original price')
+plt.plot(y_predicted, 'r', label = 'Predicted Price')
+plt.xlabel('Time')
+plt.ylabel('Price')
+plt.legend()
+st.pyplot(fig2)
+    
