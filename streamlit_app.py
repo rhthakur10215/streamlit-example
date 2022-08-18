@@ -4,7 +4,7 @@ import numpy as np
 #import matplotlib.pyplot as plt
 import datetime
 
-import pandas_datareader as data
+#import pandas_datareader as data
 import flask as fsk
 import yfinance as yf
 
